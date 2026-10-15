@@ -58,6 +58,8 @@ jobs:
           }
           EOF
 
+          echo "android.useAndroidX=true" > gradle.properties
+
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
 

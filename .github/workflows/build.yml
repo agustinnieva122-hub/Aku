@@ -1,8 +1,8 @@
-name: Build APK
+name: Build AKU APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -10,29 +10,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
 
-      - name: Install Gradle
+      - name: Set up Gradle 8.2.1
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.2.1'
 
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.2
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Make Gradle executable
-        run: chmod +x gradlew
+      - name: Install Android SDK 34
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Build APK
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Prepare Android project folders
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Upload APK
+          mkdir -p app/src/main/java/com/tupaquete/aku
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/xml
+
+          cp build.gradle.kts app/build.gradle.kts
+          cp ./*.kt app/src/main/java/com/tupaquete/aku/
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp activity_main.xml app/src/main/res/layout/activity_main.xml
+          cp colors.xml strings.xml themes.xml app/src/main/res/values/
+          cp aku_accessibility_service_config.xml app/src/main/res/xml/
+          cp proguard-rules.pro app/proguard-rules.pro
+
+          cat > build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application") version "8.2.0" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+          }
+          EOF
+
+      - name: Build debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CastFlow-APK
-          path: app/build/outputs/apk/debug/*.apk
+          name: AKU-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

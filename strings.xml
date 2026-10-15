@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AKU</string>
+    <string name="accessibility_service_description">Servicio de automatización por voz para AKU.</string>
+</resources>
